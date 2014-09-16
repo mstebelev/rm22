@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block customstyle %}
+    #news_list {
+        float:right;
+    }
+    #info_list {
+        float:left;
+    }
+    .news_item {
+        margin-top:20px;
+    }
+    .news_text {
+        margin-left:10px;
+    }
+    .news_item_info {
+        font-size: 10pt;
+        color: RGB(100, 100, 100);
+    }
+    .news_header {
+        ont-size:14pt;
+       font-weight: bold;
+    }
+    #description {
+        width:100%;
+        font-size:18pt;
+    }
+
+
+{% endblock %}
+{% block content %}
+<div id="description" align="center">
+    Конкурсы для школьников в Алтайском крае.
+</div>
+<table cellspacing="20px">
+    <td style="width:30%" valign="top">
+        <div id="info_list">
+            <h3 align="center"> Информация </h3>
+            <div class="info_item">
+                Чтобы подать заявку на конкурс, зайдите в 
+                <a href="/cabinet/school">Личный кабинет</a>
+            </div>
+        </div>
+    </td>
+    <td style="width:70%" valign="top">
+        <div id="news_list">
+            <h3 align="center"> Новости </h3>
+            {% for post in news_list %}
+                <div class="news_item">
+                    <div class='news_header'> {{ post.header }} </div>
+                    <div class='news_item_info'> Дата публикации: {{post.post_time}} </div>
+                    <div class="news_text"> 
+                        {% autoescape off %}
+                            {{ post.text }}
+                        {% endautoescape %} 
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </td>
+</table>
+
+{% endblock %}

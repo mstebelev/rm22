@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load url from future %}
+{% block customstyle %}
+        .competitions {
+            width: 100%;
+        }
+        .content {
+            margin-left:0;
+        }
+        .compcol {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        #concursname {
+            font-size:24pt;
+            margin-top:30px;
+        }
+        table#form-table input, select  {
+            width:70%;
+        }
+        #form-table {
+            width:100%;
+        }
+        .errorlist {
+            font-size:10pt;
+            background-color:RGBA(255, 0, 0, 0.3);
+        }
+        #message {
+            margin-bottom: 20px;
+            {% if messagestatus %}
+            background-color:RGBA(0, 255, 0, 0.3);
+            {% else %}
+            background-color:RGBA(255, 0, 0, 0.3);
+            {% endif %}
+        }
+        {% block customstyle2 %}
+        {% endblock %}
+{%endblock%}
+
+
+{% block content %}
+    <table style="width:100%">
+        <tr>
+            <td valign="top" style="width:20%">
+                <div class="left-menu">
+                    {% block leftmenu %}
+                    <table class="competitions" cellspacing="10px">
+                        <tr class="compcol">
+                            <td>
+                                <a href={% url "main.views.view_school" %}>Информация о школе</a>
+                            </td>
+                        </tr>
+                        {% for competition in competitions %}
+                        <tr class="compcol">
+                            <td>
+                                <a href={% url "main.views.view_order" competition.pk %}>{{competition.name}}</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                    {% endblock %}
+                </div>
+            </td>
+            <td>
+                {% block form %}
+                {% endblock %}
+            </td>
+        </tr>
+    </table>
+{% endblock %}
+

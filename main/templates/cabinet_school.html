@@ -1,0 +1,22 @@
+{% extends "cabinet.html" %}
+{% load url from future %}
+{% block customstyle2 %}
+    #school_code {
+        font-size:18pt;
+    }
+{% endblock %}
+
+{% block form %}
+<h2>Информация о школе.</h2>
+<p id="school_code">Код школы : {{ school.code }} </p>
+
+{% include "message.html" %}
+<form action="{% url "main.views.view_school" %}" method="post">
+    {% csrf_token %}
+    <table id="form-table">
+        {{form.as_table}}
+    </table>
+    <input type="submit" value="Изменить информацию"> 
+</form>
+<a href="{%url "django.contrib.auth.views.password_change" %}">Изменить пароль</a>
+{% endblock %}

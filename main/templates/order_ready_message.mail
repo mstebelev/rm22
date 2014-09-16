@@ -1,0 +1,19 @@
+
+{% if order.delivery == 1 %}
+    Бланки для проведения конкурса {{order.competition.name}} в школе {{order.school.name}} отправлены почтой {{now}} по адресу
+    {{order.school.region}},
+    {{order.school.settlement}},
+    {{order.school.adress}}.
+{% else %}
+    {% if order.delivery == 2 %}
+        Бланки для проведения конкурса {{order.competition.name}} в школе {{order.school.name}} готовы.
+        Вы можете забрать их в оргкомитете по адресу
+        пр. Социалистический, 69 (копировальный центр "Каникула" с 9-00 до 16-00)
+    {% else %}
+        Бланки для проведения конкурса {{order.competition.name}} в школе {{order.school.name}} будут доставлены вам оргкомитетом.
+    {% endif %}
+{% endif %}
+
+
+--
+Администрация rm22.ru

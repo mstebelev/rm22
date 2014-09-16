@@ -1,0 +1,98 @@
+{% extends "cabinet.html" %}
+{% load url from future %}
+{% load adminmedia %}
+
+{% block extrajs %}
+<script type="text/javascript">
+    window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{% endfilter %}";
+</script>
+<script type="text/javascript">
+    {% for par in parallels %}
+        $(function(){
+                $('#id_count_parallel_{{par.parallel.pk}}').change(function(){
+					var total = 0, totalcost = 0;
+					{% for par2 in parallels %}
+					    var val = parseInt($('#id_count_parallel_{{par2.parallel.pk}}').val() || 0);
+                        total += val;
+						totalcost += val * {{par2.cost}};
+                    {% endfor %}
+                    $('#total').val(total.toString());
+                    $('#totalcost').val(totalcost.toString());
+                    })
+                })
+    {% endfor %}
+</script>
+{% endblock %}
+
+{% block customstyle2 %}
+
+    #infomessage {
+        font-style:italic;
+        margin-top:20px;
+    }
+    #orderstatus {
+        background-color:RGB(220, 220, 220);
+    }
+    #emblem {
+        float: right;
+        margin: 10px 0 10px 10px;
+    }
+    input#id_payment_date {
+        width:90%;
+    }
+{% endblock %}
+
+{% block form %}
+<h2> Конкурс {{ selected_competition.name }} </h2>
+
+<div id="orderstatus">
+    {% if selected_competition.state < 3 %}
+    <p> Статус заявки: {% if order %} {{ order.get_status_display }} {%else%} не подана {%endif%}</p>
+	{% endif %}
+	{% if selected_competition.state == 3 and order %}
+		<p> Статус бланков: {{ order.get_blank_status_display }} </p>
+	{% endif %}
+</div>
+{% include "message.html" %}
+
+{% if selected_competition.state == 0 %}
+    <p> дата начала регистрации: {{selected_competition.registration_start_time}} </p>
+{% endif %}
+
+{% if selected_competition.state == 4 %}
+<p> Результаты конкурса: <a href="{% url "main.views.get_results" selected_competition.id %}">загрузить файл</a> </p>
+{% endif %}
+
+<div>
+    <img src="{{selected_competition.imagelink}}" id="emblem" />
+    {% if order or selected_competition.state == 1 %}
+        <div id="infomessage">
+            <p> Стоимость участия одного школьника, пересылаемая в оргкомитет: {{selected_competition.cost}} руб.</p>
+            <p> Через некоторое время после того, как заявка будет отправлена, ее редактирование станет невозможным.</p>
+
+            {% if not order or order.status == 0 %}
+            <p>Дата окончания регистрации: {{selected_competition.registration_finish_time}}</p>
+            {% endif %}
+        </div>
+</div>
+    <form action="{% url "main.views.view_order" selected_competition.pk %}" method="post">
+        {% csrf_token %}
+        <table id="form-table">
+            {{ form.media }}
+            {{form.as_table}}
+            <tr> <th> Общее число участников:</th> <td><input type="text" id="total" value="{{total}}" disabled> </td></tr>
+            <tr> <th> Общая стоимость:</th> <td><input type="text" id="totalcost" value="{{total_cost}}" disabled> </td></tr>
+        </table> 
+        <input type="submit" value="{% if not order %}Подать заявку{%else%}Изменить заявку{%endif%}"> 
+    </form>
+
+
+{% else %}
+</div>
+    Прием заявок завершен.
+{% endif %}
+
+
+
+
+{% endblock %}
