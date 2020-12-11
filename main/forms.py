@@ -10,12 +10,14 @@ import django.forms as forms
 import sys
 from django.core.mail import send_mail,EmailMessage
 from django.template.loader import render_to_string
+from django.core.validators import RegexValidator
 class OrderForm(ModelForm):
     class Meta:
         model = Order
         exclude= ('school', 'competition', 'status', 'blank_status')
         widgets = {
             'payment_date': CalendarWidget(),
+            'org_phone': forms.TextInput(attrs={'placeholder': '+71112223344'})
         }
 
     def __init__(self, *args, **kws):
@@ -64,20 +66,20 @@ class OrderForm(ModelForm):
                         parallel=parallel_for_competition.parallel,
                         order=instance,
                         count=count)
-
-        subject, text, from_, to_ = (
-                  u'Заявка на конкурс %s' % instance.competition.name,
-                  render_to_string('order_create_message.mail', {
-                      'order': instance,
-                      'order_parallels': OrderParallel.objects.filter(order=instance),
-                      'is_old': is_old,
-                  }),
-                  'notifier@rm22.ru',
-                  [instance.org_mail, instance.school.mail, instance.competition.org_mail])
-        print >>sys.stderr, 'message from %s to %s about order %s sending' % (from_, to_, instance)
-        msg = EmailMessage(subject, text, from_, to_)
-        msg.content_subtype='html'
-        msg.send()
+        instance.notify_about_status(u'Заявка на конкурс %s' % instance.competition.name, 'order_create_message.mail', is_old, sms_template = 'order_create_message.sms')
+        #subject, text, from_, to_ = (
+                  #,
+                  #render_to_string(, {
+                      #'order': instance,
+                      #'order_parallels': OrderParallel.objects.filter(order=instance),
+                      #'is_old': is_old,
+                  #}),
+                  #'notifier@rm22.ru',
+                  #[instance.org_mail, instance.school.mail, instance.competition.org_mail])
+        #print >>sys.stderr, 'message from %s to %s about order %s sending' % (from_, to_, instance)
+        #msg = EmailMessage(subject, text, from_, to_)
+        #msg.content_subtype='html'
+        #msg.send()
 
     def clean(self):
         cleaned_data = super(OrderForm, self).clean()

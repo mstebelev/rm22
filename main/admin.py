@@ -68,7 +68,7 @@ class OrderAdmin(admin.ModelAdmin):
         return super(OrderAdmin, self).change_view(request, object_id,
                                                    extra_context)
 
-    list_display=('school', 'school_code', 'competition','status','blank_status','status_updatetime',
+    list_display=('school', 'school_code', 'total_participants', 'competition','status','blank_status','status_updatetime',
                   'blank_status_updatetime', 'create_time')
     list_filter=('status','blank_status', 'competition', 'delivery', 'result_delivery')
     search_fields = ['school__code', 'school__name']
@@ -80,6 +80,8 @@ class OrderAdmin(admin.ModelAdmin):
                mark_as_blanks_sent, get_orders_csv]
     inlines = [OrderParallelInline]
 
+    readonly_fields = ('total_participants',)
+
     def school_edit(self, obj):
         return '<a href="%s">%s</a>' % (
             reverse("admin:main_school_change", args=(obj.school.id,)) ,
@@ -90,6 +92,13 @@ class OrderAdmin(admin.ModelAdmin):
     def school_code(self, obj):
         return obj.school.code
     school_code.short_description = u'код школы'
+    school_code.allow_tags = True
+    school_code.admin_order_field = 'school__code'
+
+    def total_participants(self, obj):
+        return sum(op.count for op in OrderParallel.objects.filter(order=obj))
+    total_participants.short_description = u'Количество участников'
+    total_participants.allow_tags = True
 
 
 def download(modeladmin, request, queryset):

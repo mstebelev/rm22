@@ -6,6 +6,7 @@ from django.http import HttpResponse
 import sys
 from django.core.mail import send_mail,EmailMessage
 from django.template.loader import render_to_string
+from django.db.models.signals import pre_save
 
 class Parallel(models.Model):
     name = models.CharField(max_length=256)
@@ -68,12 +69,13 @@ class School(models.Model):
     def __unicode__(self):
         return self.name
 
+from django.core.validators import RegexValidator
 class Order(models.Model):
     school = models.ForeignKey('School')
     competition = models.ForeignKey('Competition')
     org_name = models.CharField("ФИО организатора", max_length=1024)
-    org_phone = models.CharField("Телефон организатора", max_length=16)
-    org_mail = models.EmailField("Адрес электронной почты")
+    org_phone = models.CharField("Телефон организатора", max_length=16, validators=[RegexValidator(regex=r'\+\d{11}', message=u'Введите телефон в формате +71112223344')])
+    org_mail = models.EmailField("Адрес электронной почты организатора")
 #    count_2 = models.IntegerField("Количество участников 2 класса", blank=True,
 #                                 default=0)
 #    count_3 = models.IntegerField("Количество участников 3 класса", blank=True,
@@ -141,6 +143,9 @@ class Order(models.Model):
             (3, "выслать в комитет по образованию")
         ),
     )
+    send_sms_to_org = models.BooleanField("отправлять уведомления о статусе заявки на телефон организатора", default=True)
+    send_mail_to_org = models.BooleanField("отправлять уведомления о статусе заявки на электронную почту организатора", default=True)
+    send_mail_to_school = models.BooleanField("отправлять уведомления о статусе заявки на электронную почту школы", default=True)
 
     payer = models.CharField('Сведения об оплате(ФИО плательщика, сумма)',max_length=1024, blank=True)
     payment_date = models.DateField('Дата оплаты', blank=True)
@@ -154,6 +159,55 @@ class Order(models.Model):
        self.old_status = self.status
        self.old_blank_status = self.blank_status
 
+    def notify_about_status(self, message, template_name, is_old, sms_template=None):
+        addresses = [self.competition.org_mail]
+        now = date.today()
+        if self.send_mail_to_org:
+            addresses.append(self.org_mail)
+        if self.send_mail_to_school:
+            addresses.append(self.school.mail)
+        if addresses:
+            print >>sys.stderr, 'Message from %s to %s about order %s sending' % ('pm', addresses, self)
+            try:
+                subject, text, from_, to_ = (
+                    message,
+                    render_to_string(template_name, {
+                        'order': self,
+                        'now': now,
+                        'order_parallels': OrderParallel.objects.filter(order=self),
+                        'is_old': is_old
+                    }),
+                    'notifier@rm22.ru',
+                    addresses
+                )
+                msg = EmailMessage(subject, text, from_, to_)
+                msg.content_subtype='html'
+                msg.send()
+            except Exception, e:
+                print >>sys.stderr, e
+                raise
+
+        print >>sys.stderr, 'email sent'
+        if self.send_sms_to_org:
+            try:
+                print >>sys.stderr, 'sending sms to %s' % (self.org_phone)
+                import requests
+                if sms_template:
+                    sms = render_to_string(sms_template, {
+                        'order': self,
+                        'now': now,
+                        'order_parallels': OrderParallel.objects.filter(order=self),
+                        'is_old': is_old
+                    })
+                else:
+                    sms = message
+                ans = requests.post(url='https://web.mirsms.ru/public/http',params={'gzip': 'none', 'user': '32796.1', 'pass': '73906317', 'action': 'post_sms', 'message': sms, 'target': self.org_phone}, headers={'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
+                print >>sys.stderr, ans
+                print >>sys.stderr, ans.text
+            except Exception, e:
+                print >>sys.stderr, e
+
+
     def save(self, *args, **kwargs):
         is_old = self.pk
         rv = super(Order, self).save(*args, **kwargs)
@@ -162,30 +216,24 @@ class Order(models.Model):
                 self.status_updatetime = datetime.now()
 
                 if self.status == 1:
-                    message = u'Заявка на конкурс %s получена оргкомитетом' % self.competition.name
+                    message = self.competition.name
                     template_name = 'in_process_message.mail'
+                    sms_template = 'in_process_message.sms'
                 elif self.status == 2:
-                    message = u'Статус заявки на конкурс %s изменен' % self.competition.name
+                    message = self.competition.name
                     template_name = 'order_ready_message.mail'
+                    sms_template = 'order_ready_message.sms'
                 else:
                     message = None
 
                 if message:
-                    now = date.today()
-                    print >>sys.stderr, 'message from %s to %s about order %s sending' % ('pm', [self.org_mail, self.school.mail], self)
-                    send_mail(message,
-                              render_to_string(template_name, {'order': self, 'now': now}),
-                          'notifier@rm22.ru',
-                          [self.org_mail, self.school.mail])
+                    self.notify_about_status(message, template_name, True, sms_template=sms_template)
 
             if self.old_blank_status != self.blank_status:
                 self.blank_status_updatetime = datetime.now()
                 if self.old_blank_status == 0 and self.blank_status == 1:
-                    message = 'Бланки с ответами получены оргкомитетом'
-                    send_mail(message,
-                          render_to_string('blanks_received.mail', {'order': self}),
-                          'notifier@rm22.ru',
-                          [self.org_mail, self.school.mail])
+                    message = self.competition.name
+                    self.notify_about_status(message, 'blanks_received.mail', True, 'blanks_received.sms')
 
         return rv
 
@@ -215,4 +263,15 @@ class News(models.Model):
     post_time = models.DateTimeField(default=datetime.now, editable=False)
 
 
+def notify_participants(sender, instance, signal, *args, **kwargs):
+    if sender is Competition:
+        old_obj = Competition.objects.get(pk=instance.pk)
+        print >>sys.stderr, 'old state:', old_obj.state
+        print >>sys.stderr, 'new state:', instance.state
+        if old_obj.state != instance.state and instance.state == 4:
+            orders = Order.objects.filter(competition=instance)
+            for order in orders:
+                order.notify_about_status(instance.name, "results_ready.mail", False, "results_ready.sms")
+
+pre_save.connect(notify_participants, sender=Competition)
 # Create your models here.

@@ -1,4 +1,4 @@
-{% if is_old %} Изменена {% else %} Отправлена {% endif %} заявка от школы {{order.school.name}} на конкурс "{{order.competition.name}}". <br/>
+{% if is_old %} Изменена {% else %} Принята {% endif %} заявка от школы {{order.school.name}} на конкурс "{{order.competition.name}}". <br/>
 {% if is_old %} Текущее состояние заявки: <br/> {% endif %} 
 Организатор конкурса в школе - {{order.org_name}}.
 <table border=1>
