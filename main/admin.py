@@ -28,10 +28,10 @@ def get_orders_csv(modeladmin, request, queryset):
     response['Content-Disposition'] = 'attachment; filename=orders.csv'
     response.write(';'.join(fields))
     response.write(';')
-    response.write(';'.join(unicode(op.parallel).encode('cp1251') for op in parallels))
+    response.write(';'.join(unicode(op.parallel).encode('utf-8') for op in parallels))
     response.write('\n')
     for order,serial_order in zip(queryset, data):
-        response.write(';'.join(getattr(order, 'get_' + field + '_display')().encode('cp1251') if hasattr(order, 'get_' + field + '_display') else unicode(serial_order['fields'][field]).encode('cp1251') for field in fields))
+        response.write(';'.join(getattr(order, 'get_' + field + '_display')().encode('utf-8') if hasattr(order, 'get_' + field + '_display') else unicode(serial_order['fields'][field]).encode('utf-8') for field in fields))
         order_parallels = dict((o.parallel, o) for o in OrderParallel.objects.filter(order=order))
         response.write(';')
         response.write(';'.join(str(order_parallels[p.parallel].count) if p.parallel in order_parallels else '0' for p in parallels))
