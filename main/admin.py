@@ -24,7 +24,7 @@ def get_orders_csv(modeladmin, request, queryset):
     fields = sorted(data[0]['fields'].keys())
     #print >>sys.stderr, data
     parallels = CompetitionForParallel.objects.filter(competition=competition)
-    response = HttpResponse(mimetype="text/plain")
+    response = HttpResponse(content_type="text/plain")
     response['Content-Disposition'] = 'attachment; filename=orders.csv'
     response.write(';'.join(fields))
     response.write(';')
@@ -66,7 +66,7 @@ class OrderAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context['school_id'] = properties
         return super(OrderAdmin, self).change_view(request, object_id,
-                                                   extra_context)
+                                                   extra_context=extra_context)
 
     list_display=('school', 'school_code', 'total_participants', 'competition','status','blank_status','status_updatetime',
                   'blank_status_updatetime', 'create_time')
@@ -102,7 +102,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 def download(modeladmin, request, queryset):
-    response = HttpResponse(mimetype="text/plain")
+    response = HttpResponse(content_type="text/plain")
     response['Content-Disposition'] = 'attachment; filename=schools.csv'
     serializers.serialize("csv", queryset, stream=response)
     return response
@@ -120,7 +120,7 @@ class SchoolAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context['school_code'] = school_code
         return super(SchoolAdmin, self).change_view(request, object_id,
-                                                   extra_context)
+                                                   extra_context=extra_context)
 
 class CompetitionForParallelInline(admin.TabularInline):
     model = CompetitionForParallel

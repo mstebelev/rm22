@@ -42,7 +42,7 @@ class Serializer(PythonSerializer):
                     parts.append(process_item(item))
             return '[%s]' % ', '.join(parts)
 
-        writer = UnicodeWriter(self.stream, encoding='cp1251')
+        writer = UnicodeWriter(self.stream, encoding='utf-8')
         # Group objects by model and write out a header and rows for each.
         # Multiple models can be present when invoking from the command
         # line, e.g.: `python manage.py dumpdata --format csv auth`

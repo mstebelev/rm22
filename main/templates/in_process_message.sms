@@ -1,0 +1,2 @@
+Ваша заявка от школы {{order.school.name}} на конкурс "{{order.competition.name}}" перешла в обработку.
+Администрация rm22.ru

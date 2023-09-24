@@ -1,11 +1,7 @@
 {% extends "cabinet.html" %}
 {% load url from future %}
-{% load adminmedia %}
 
 {% block extrajs %}
-<script type="text/javascript">
-    window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{% endfilter %}";
-</script>
 <script type="text/javascript">
     {% for par in parallels %}
         $(function(){

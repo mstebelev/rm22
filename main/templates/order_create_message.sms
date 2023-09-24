@@ -1,0 +1,2 @@
+{% if is_old %} Изменена {% else %} Принята {% endif %} заявка от школы {{order.school.name}} на конкурс "{{order.competition.name}}".
+Администрация rm22.ru
